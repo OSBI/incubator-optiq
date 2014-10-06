@@ -265,7 +265,7 @@ limitations under the License.
           <target>1.5</target>
         </configuration>
       </plugin>
-      <plugin>
+<!--      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <executions>
@@ -285,7 +285,7 @@ limitations under the License.
             </goals>
           </execution>
         </executions>
-      </plugin>
+      </plugin>-->
       <plugin>
         <!-- Override apache parent POM's definition of release
              plugin. If we don't specify gitexe version, git doesn't

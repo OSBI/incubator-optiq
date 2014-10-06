@@ -22,7 +22,11 @@ import net.hydromatic.optiq.impl.jdbc.JdbcSchema;
 import net.hydromatic.optiq.jdbc.OptiqConnection;
 import net.hydromatic.optiq.jdbc.OptiqSchema;
 import net.hydromatic.optiq.materialize.Lattice;
-
+import org.apache.commons.vfs.FileContent;
+import org.apache.commons.vfs.FileObject;
+import org.apache.commons.vfs.FileSystemManager;
+import org.apache.commons.vfs.VFS;
+import org.apache.commons.vfs.provider.http.HttpFileObject;
 import org.eigenbase.util.Pair;
 import org.eigenbase.util.Util;
 
@@ -33,6 +37,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.*;
 import javax.sql.DataSource;
@@ -51,20 +56,64 @@ public class ModelHandler {
 
   public ModelHandler(OptiqConnection connection, String uri)
       throws IOException {
-    super();
-    this.connection = connection;
-    final ObjectMapper mapper = new ObjectMapper();
-    mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-    mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-    JsonRoot root;
-    if (uri.startsWith("inline:")) {
-      root = mapper.readValue(
-          uri.substring("inline:".length()), JsonRoot.class);
-    } else {
-      root = mapper.readValue(new File(uri), JsonRoot.class);
-    }
-    visit(root);
+      super();
+      this.connection = connection;
+      final ObjectMapper mapper = new ObjectMapper();
+      mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+      mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+      mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+      JsonRoot root = null;
+      if (uri.startsWith("inline:")) {
+          root = mapper.readValue(
+                  uri.substring("inline:".length()), JsonRoot.class);
+      } else {
+          FileSystemManager fsManager = VFS.getManager();
+          if (fsManager == null) {
+          }
+          if (uri.startsWith("file://localhost")) {
+              uri = uri.substring("file://localhost".length());
+          }
+          if (uri.startsWith("file:")) {
+              uri = uri.substring("file:".length());
+          }
+// work around for VFS bug not closing http sockets
+// (Mondrian-585)
+          if (uri.startsWith("http")) {
+              try {
+                  root = mapper.readValue(new URL(uri).openStream(), JsonRoot.class);
+              } catch (IOException e) {
+
+
+              }
+          } else {
+              File userDir = new File("").getAbsoluteFile();
+              FileObject file = fsManager.resolveFile(userDir, uri);
+              FileContent fileContent = null;
+              try {
+                  file.refresh();
+
+                  if (file instanceof HttpFileObject
+                          && !file.getName().getURI().equals(uri)) {
+                      fsManager.getFilesCache().removeFile(
+                              file.getFileSystem(), file.getName());
+                      file = fsManager.resolveFile(userDir, uri);
+                  }
+                  if (!file.isReadable()) {
+
+                  }
+                  fileContent = file.getContent();
+              } finally {
+                  file.close();
+              }
+              if (fileContent == null) {
+
+              }
+              root = mapper.readValue(fileContent.getInputStream(), JsonRoot.class);
+          }
+
+
+      }
+      visit(root);
   }
 
   /** Creates and validates a ScalarFunctionImpl. */

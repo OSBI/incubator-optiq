@@ -45,6 +45,12 @@ limitations under the License.
       <groupId>org.pentaho</groupId>
       <artifactId>pentaho-aggdesigner-algorithm</artifactId>
     </dependency>
+      <dependency>
+          <groupId>commons-vfs</groupId>
+          <artifactId>commons-vfs</artifactId>
+          <version>1.0</version>
+      </dependency>
+
   </dependencies>
 
   <build>

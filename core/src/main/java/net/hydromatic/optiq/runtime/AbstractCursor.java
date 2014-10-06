@@ -429,7 +429,13 @@ public abstract class AbstractCursor implements Cursor {
     }
 
     public short getShort() {
-      Short o = (Short) getObject();
+        Short o;
+        if(getObject() instanceof Short) {
+            o = (Short) getObject();
+        }
+        else{
+            o = ((Integer) getObject()).shortValue();
+        }
       return o == null ? 0 : o;
     }
 
@@ -467,7 +473,13 @@ public abstract class AbstractCursor implements Cursor {
     }
 
     public long getLong() {
-      Long o = (Long) super.getObject();
+        Long o;
+        if(super.getObject() instanceof Long) {
+             o = (Long) super.getObject();
+        }
+        else{
+             o = Long.valueOf((Integer)super.getObject());
+        }
       return o == null ? 0 : o;
     }
   }
